@@ -364,24 +364,25 @@ class TransReID(nn.Module):
 
         x = x + self.pos_embed
 
+        """for blk in self.blocks:
+            x = blk(x)
+        
+        x = self.norm(x)
+        
+        if return_all_tokens:
+            return x  # <--- returns [B, N+1, D]: CLS + patch tokens
+        
+        cls_token = x[:, 0]
+        local_token = x[:, 1:].mean(dim=1)
+        feature = torch.cat([cls_token, local_token], dim=1)
+        return feature"""
+
         x = self.pos_drop(x)
+        for blk in self.blocks[:-1]:
+            x = blk(x)
+        return x # return all tokens cls and patch tokens
 
-        if self.local_feature:
-            for blk in self.blocks[:-1]:
-                x = blk(x)
-            return x
 
-        else:
-            for blk in self.blocks:
-                x = blk(x)
-
-            x = self.norm(x)
-
-            cls_token = x[:, 0]
-            local_token = x[:, 1:].mean(dim=1)
-            feature = torch.cat([cls_token, local_token], dim=1)
-
-            return feature
 
     def forward(self, x, cam_label=None, view_label=None):
         x = self.forward_features(x, cam_label, view_label)
